@@ -8,8 +8,8 @@ import (
 	"strconv"
 )
 
-func getFuelReq(mod float64) (fuelReq int) {
-	fuelReq = int(math.Floor(mod/3) - 2)
+func getFuelReq(mass float64) (fuelReq float64) {
+	fuelReq = math.Floor(mass/3) - 2
 
 	return
 }
@@ -26,12 +26,24 @@ func main() {
 	var totalFuelReq int
 
 	for scanner.Scan() {
-		input, err := strconv.ParseFloat( scanner.Text(), 64 )
+		mass, err := strconv.ParseFloat( scanner.Text(), 64 )
 		if err != nil {
 			panic(err)
 		}
 
-		totalFuelReq += getFuelReq(input)
+		moduleFuelReq := getFuelReq(mass)
+		fuelReq := moduleFuelReq
+
+		for {
+			fuelReq = getFuelReq(fuelReq)
+			if fuelReq < 1 { 
+				break
+			}
+
+			moduleFuelReq += fuelReq
+		}
+
+		totalFuelReq += int(moduleFuelReq)
 	}
 
 	fmt.Println(totalFuelReq)
