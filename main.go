@@ -29,29 +29,17 @@ func getIntUnits(whole float64) (units []float64) {
 }
 
 func checkForDoubles(digits []float64, passed *int) {
-	var allGood bool
+	groups := make(map[float64]int)
 
-	for i := range digits {
-		if i == len(digits)-1 {
-			break
-		}
-
-		if digits[i] == digits[i+1] {
-			allGood = true
-
-			if digits[i+1] == digits[i+2] {
-				if digits[i+2] == digits[i+3] {
-					i++
-				} else {
-					allGood = false
-					break
-				}
-			}
-		}
+	for _, digit := range digits {
+		groups[digit]++
 	}
 
-	if allGood {
-		*passed++
+	for _, matches := range groups {
+		if matches == 2 {
+			*passed++
+			break
+		}
 	}
 }
 
@@ -91,13 +79,12 @@ func isPossible(digits []float64) bool {
 }
 
 func main() {
-	//start := lowerBound
-	//end := upperBound
+	start := lowerBound
+	end := upperBound
 
 	var numOptions int
 
-	//for passwdTrial := start; passwdTrial < end; passwdTrial++ {
-	for _, passwdTrial := range []float64{112233, 123444, 111122} {
+	for passwdTrial := start; passwdTrial < end; passwdTrial++ {
 		units := getIntUnits(passwdTrial)
 
 		if isPossible(units) {
