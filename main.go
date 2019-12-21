@@ -9,10 +9,12 @@ import (
 type opFunc func([]int, *[]int)
 
 func getOpFunc(opc int) (opFunc, int) {
-	switch opc {
-	case 1, 11101, 11001, 10001, 1001, 101:
+	_, opcode := parseOpc(opc)
+
+	switch opcode {
+	case 1:
 		return opc1, 4
-	case 2, 11102, 11002, 10002, 1002, 102:
+	case 2:
 		return opc2, 4
 	case 3:
 		return opc3, 2
@@ -20,18 +22,18 @@ func getOpFunc(opc int) (opFunc, int) {
 		return opc4, 2
 	case 99:
 		return opc99, 1
+	default:
+		return opcERR, 1
 	}
-
-	return nil, 0
 }
 
 func opcGeneric(instructions []int, fullCode *[]int) (int, int, int) {
-	pModes := getPModes(instructions[0])
+	pModes, opc := parseOpc(instructions[0])
 
 	var (
 		operandA    int
 		operandB    int
-		destination int
+		operandC    int
 	)
 
 	if pModes[2] == 1 {
@@ -40,15 +42,25 @@ func opcGeneric(instructions []int, fullCode *[]int) (int, int, int) {
 		operandA = (*fullCode)[instructions[1]] //Position Mode
 	}
 
-	if pModes[1] == 1 {
-		operandB = instructions[2]
-	} else {
-		operandB = (*fullCode)[instructions[2]]
+	if len(instructions) > 2 {
+		if pModes[1] == 1 {
+			operandB = instructions[2]
+		} else {
+			operandB = (*fullCode)[instructions[2]]
+		}
+
+		if opc == 1 || opc == 2 {
+			operandC = instructions[3]
+		} else {
+			if pModes[0] == 1 {
+				operandC = instructions[3]
+			} else {
+				operandC = (*fullCode)[instructions[3]]
+			}
+		}
 	}
 
-	destination = instructions[3]
-
-	return operandA, operandB, destination
+	return operandA, operandB, operandC
 }
 
 func opc1(instructions []int, fullCode *[]int) {
@@ -67,27 +79,32 @@ func opc2(instructions []int, fullCode *[]int) {
 
 func opc3(instructions []int, fullCode *[]int) {
 	var input int
-	fmt.Scanf("Please enter device id: %d", &input)
+	fmt.Print("Please enter [Device ID]: ")
+	fmt.Scan(&input)
 
 	(*fullCode)[instructions[1]] = input
 }
 
 func opc4(instructions []int, fullCode *[]int) {
-	fmt.Printf("Output: %d\n",
-		(*fullCode)[instructions[1]],
-	)
+	p1, _, _ := opcGeneric(instructions, fullCode)
+
+	fmt.Printf("Output: %d\n", p1 )
 }
 
 func opc99(instructions []int, fullCode *[]int) {
-	fmt.Println((*fullCode)[0])
 	os.Exit(0)
 }
 
-func getPModes(op int) []int {
+func opcERR(instructions []int, fullCode *[]int) {
+	fmt.Printf("Function Errored: %d\n", instructions )
+	os.Exit(1)
+}
+
+func parseOpc(op int) ([]int, int) {
 	var units []int
 	opc := float64(op)
 
-	for i := 5; i >= 0; i-- {
+	for i := 4; i >= 0; i-- {
 		pow10 := math.Pow10(i)
 
 		unit := opc / pow10
@@ -98,7 +115,10 @@ func getPModes(op int) []int {
 		units = append(units, int(unit))
 	}
 
-	return units[:3]
+	opcode := (units[3] * 10) + units[4]
+	params := units[:3]
+
+	return params, opcode
 }
 
 func main() {
